@@ -30,6 +30,7 @@ from .filters import ProductoFilter
 
 # catalogo/views.py — agregar imports al inicio:
 import stripe
+import uuid
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 
@@ -38,6 +39,7 @@ from .checkout_utils import (
     calcular_totales,
     generar_numero_pedido,
     obtener_o_crear_cliente,
+
 )
 
 # Configurar la clave secreta de Stripe
@@ -272,7 +274,7 @@ def checkout(request):
                     'pedido_num': pedido.numero_pedido,
                     'cliente':    cliente.nombre,
                 },
-                idempotency_key = f'pedido-{pedido.pk}',
+                idempotency_key = f'pedido-{pedido.pk}-{uuid.uuid4().hex}',
             )
 
             # ── 4. Retornar client_secret al template ──────────────────
