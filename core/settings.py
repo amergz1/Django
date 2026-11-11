@@ -22,22 +22,27 @@ environ.Env.read_env(BASE_DIR / '.env')
 
 SECRET_KEY  = env('SECRET_KEY', default='dev-key-insegura-solo-para-desarrollo')
 DEBUG       = env('DEBUG', default=True)
-ALLOWED_HOSTS = ['django-loso.onrender.com','localhost', '127.0.0.1']
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['.onrender.com','localhost','127.0.0.1'])
 
 
-# ── Apps instaladas ───────────────────────────────────────────────────────
+# core/settings.py — actualizar INSTALLED_APPS (terceros):
+# core/settings.py — actualizar INSTALLED_APPS:
 INSTALLED_APPS = [
-    # Jazzmin PRIMERO — antes de django.contrib.admin
-    'jazzmin',                          # ← nueva línea, primera posició
-
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     # Terceros
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
     'rest_framework',
+    'rest_framework.authtoken',
+    'django_filters',              # ← nuevo (nombre de app es django_filters)
     'whitenoise.runserver_nostatic',
     # Apps del ERP
     'clientes',
@@ -45,7 +50,8 @@ INSTALLED_APPS = [
     'productos',
     'ventas',
     'reportes',
-    'configuracion', # nueva app
+    'configuracion',
+    'catalogo',                    # ← nuevo
 ]
 
 MIDDLEWARE = [
@@ -56,17 +62,18 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMi'
-    'ddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',   # ← agregar al final
 ]
 
 ROOT_URLCONF = 'core.urls'
 
 # ── Templates ─────────────────────────────────────────────────────────────
+# core/settings.py — actualizar TEMPLATES[0]['OPTIONS']['context_processors']:
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],       # carpeta global de templates
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -74,10 +81,13 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # Context processor del carrito — W13
+                'catalogo.context_processors.carrito_info',
             ],
         },
     },
 ]
+
 
 # ── Base de datos ─────────────────────────────────────────────────────────
 DATABASES = {
@@ -113,25 +123,37 @@ LOGIN_URL           = '/accounts/login/'
 LOGIN_REDIRECT_URL  = '/productos/'
 LOGOUT_REDIRECT_URL = '/'
 
-# ── DRF ──────────────────────────────────────────────────────────────────
+# core/settings.py — reemplazar la configuración REST_FRAMEWORK de W01:
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',   # para el navegador
+        'rest_framework.authentication.TokenAuthentication',     # para clientes externos
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # core/settings.py — agregar al final del archivo
+# core/settings.py — agregar al final (antes de JAZZMIN_SETTINGS):
+
+# ── STRIPE (Pasarela de pago) ──────────────────────────────────────────────
+STRIPE_SECRET_KEY     = env('STRIPE_SECRET_KEY',     default='sk_test_placeholder')
+STRIPE_PUBLISHABLE_KEY = env('STRIPE_PUBLISHABLE_KEY', default='pk_test_placeholder')
+STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET', default='whsec_placeholder')
 
 # ── JAZZMIN — Personalización del admin con Fable 5 AzulERP ───────────────
 JAZZMIN_SETTINGS = {
     # Identidad
     'site_title':       'ERP Django',
-    'site_header':      'ERP UTEC Celaya',
+    'site_header':      'ERP CBtis 198 Celaya',
     'site_brand':       '📦 ERP Django',
-    'welcome_sign':     'Bienvenido al Sistema ERP · UTEC Celaya',
-    'copyright':        'MC. Román Fernando López González · UTEC Celaya',
+    'welcome_sign':     'Bienvenido al Sistema ERP · CBtis 198 Celaya',
+    'copyright':        'America Solancht Rodriguez Morales · CBtis198 Celaya',
 
     # Icono del sitio (usar emoji como fallback)
     'site_icon':        None,
@@ -220,3 +242,26 @@ JAZZMIN_UI_TWEAKS = {
         'success':   'btn-success',
     },
 }
+
+# ── DJANGO SITES (requerido por allauth) ──────────────────────────────────
+SITE_ID = 1
+
+# ── AUTHENTICATION BACKENDS ───────────────────────────────────────────────
+AUTHENTICATION_BACKENDS = [
+    # Backend estándar de Django (username + password en admin)
+    'django.contrib.auth.backends.ModelBackend',
+    # Backend de allauth (permite login por email también)
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# ── ALLAUTH: configuración para desarrollo académico ──────────────────────
+ACCOUNT_LOGIN_METHODS          = {'username'}   # login por username
+ACCOUNT_EMAIL_REQUIRED         = False          # no obligar correo
+ACCOUNT_EMAIL_VERIFICATION     = 'none'         # no enviar email de verificación
+ACCOUNT_LOGOUT_ON_GET          = True           # logout sin confirmar (dev)
+ACCOUNT_SESSION_REMEMBER       = True           # recordar sesión
+
+# LOGIN_URL y LOGIN_REDIRECT_URL ya definidos en W01:
+# LOGIN_URL           = '/accounts/login/'
+# LOGIN_REDIRECT_URL  = '/productos/'
+LOGOUT_REDIRECT_URL = '/'

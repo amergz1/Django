@@ -24,8 +24,9 @@ from django.core.exceptions import ValidationError
 from decimal import Decimal
 from django.core.validators import MinValueValidator
 
-# ── Venta ─────────────────────────────────────────────────────────────────
 
+# ── Venta ─────────────────────────────────────────────────────────────────
+items_snapshot = models.JSONField(default=list, blank=True)
 class Venta(models.Model):
     """Encabezado de una venta interna.
 
@@ -185,6 +186,19 @@ class Pedido(models.Model):
         validators=[MinValueValidator(Decimal('0.00'))],  # ← agregar
         verbose_name='Total pagado'
     )
+    # ventas/models.py — en la clase Pedido, agregar después de total_pagado:
+
+    items_snapshot = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Snapshot de items del carrito',
+        help_text=(
+            'Copia del carrito al momento de crear el pedido. '
+            'Estructura: [{"producto_id": 1, "nombre": "...", '
+            '"cantidad": 2, "precio": "500.00"}]'
+        )
+    )
+
 
     class Meta:
         verbose_name        = 'Pedido'
@@ -195,6 +209,7 @@ class Pedido(models.Model):
         return f"{self.numero_pedido} — {self.cliente} [{self.get_estado_display()}]"
 
 # Agregar dentro de la clase Pedido:
+
 
     def clean(self) -> None:
         """Valida que la fecha de entrega no sea anterior al pedido.

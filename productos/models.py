@@ -12,6 +12,8 @@ from django.db import models
 
 from proveedores.models import Proveedor
 from django.core.exceptions import ValidationError   # ← agregar al inicio del archivo
+# productos/models.py — agregar al inicio:
+from .validators import validar_imagen_producto
 
 
 class Categoria(models.Model):
@@ -79,6 +81,16 @@ class Producto(models.Model):
     activo    = models.BooleanField(
         default=True, verbose_name='Activo'
     )
+    # Actualizar el campo imagen en la clase Producto:
+    imagen = models.ImageField(
+        upload_to='productos/',
+        null=True,
+        blank=True,
+        verbose_name='Imagen del producto',
+        help_text='Formatos: JPEG, PNG, WEBP. Máximo 5 MB.',
+        validators=[validar_imagen_producto],   # ← agregar
+    )
+    
     creado    = models.DateTimeField(
         auto_now_add=True, verbose_name='Fecha de registro'
     )
@@ -90,6 +102,7 @@ class Producto(models.Model):
 
     def __str__(self) -> str:
         return f"{self.nombre} (${self.precio:.2f})"
+
 
 # Agregar dentro de la clase Producto, después de los campos y antes de Meta:
 
