@@ -23,6 +23,7 @@ from django.views.decorators.http import require_POST
 
 from productos.models import Producto
 from ventas.models    import Pedido
+from ventas.tasks import enviar_confirmacion_pedido
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +118,7 @@ def _manejar_pago_exitoso(payment_intent: dict) -> None:
 
         # Descontar stock de cada producto del snapshot
         _descontar_stock(pedido)
+        enviar_confirmacion_pedido.delay(pedido.pk)
     else:
         logger.info(
             f'Pedido {pedido.numero_pedido} ya estaba pagado — '

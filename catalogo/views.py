@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from ventas.tasks import enviar_confirmacion_pedido
 
 # Create your views here.
 # catalogo/views.py
@@ -317,7 +318,8 @@ def pago_exitoso(request, pedido_id: int):
     """
     from django.shortcuts import get_object_or_404
     pedido = get_object_or_404(Pedido, pk=pedido_id)
-
+    enviar_confirmacion_pedido.delay(pedido.pk)
+    
     # Vaciar el carrito al confirmar el pago
     _guardar_carrito(request, {})
     messages.success(
@@ -329,7 +331,7 @@ def pago_exitoso(request, pedido_id: int):
     return render(request, 'catalogo/pago_exitoso.html', {
         'pedido': pedido,
     })
-
+    
 
 def pago_error(request):
     """Vista de error de pago — muestra mensaje y permite reintentar."""
