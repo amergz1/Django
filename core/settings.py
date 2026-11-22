@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'rest_framework',
+    'anymail',    # ← agregar
     'rest_framework.authtoken',
     'django_filters',              # ← nuevo (nombre de app es django_filters)
     'whitenoise.runserver_nostatic',
@@ -134,7 +135,10 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    
 }
+
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -145,6 +149,28 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STRIPE_SECRET_KEY     = env('STRIPE_SECRET_KEY',     default='sk_test_placeholder')
 STRIPE_PUBLISHABLE_KEY = env('STRIPE_PUBLISHABLE_KEY', default='pk_test_placeholder')
 STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET', default='whsec_placeholder')
+
+# ── CORREO ELECTRÓNICO ────────────────────────────────────────────────────
+EMAIL_BACKEND = env(
+    'EMAIL_BACKEND',
+    default='django.core.mail.backends.console.EmailBackend'
+)
+
+DEFAULT_FROM_EMAIL = env(
+    'DEFAULT_FROM_EMAIL',
+    default='ERP Django <noreply@erp-django.com>'
+)
+
+EMAIL_SUBJECT_PREFIX = '[ERP Django] '
+
+ADMINS = [
+    ('Admin ERP', env('ADMIN_EMAIL', default='admin@erp-django.com')),
+]
+
+SENDGRID_API_KEY = env('SENDGRID_API_KEY', default='')
+ANYMAIL = {
+    'SENDGRID_API_KEY': SENDGRID_API_KEY,
+}
 
 # ── JAZZMIN — Personalización del admin con Fable 5 AzulERP ───────────────
 JAZZMIN_SETTINGS = {
@@ -282,5 +308,6 @@ CELERY_TASK_TIME_LIMIT       = 360
 
 CELERY_TASK_DEFAULT_QUEUE = 'erp_django'
 
-CELERY_TASK_ALWAYS_EAGER     = False
-CELERY_TASK_EAGER_PROPAGATES = True
+import sys
+CELERY_TASK_ALWAYS_EAGER = env.bool('CELERY_EAGER', default=('test' in sys.argv))
+CELERY_TASK_EAGER_PROPAGATES = False
