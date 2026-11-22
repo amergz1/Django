@@ -35,3 +35,9 @@ databases:
     user: erp_user
     plan: free                     # PostgreSQL gratuito en Render (90 días)
     region: oregon
+
+# W18: Celery Beat embebido (tareas programadas). UNA sola instancia.
+  - key: CELERY_EMBEDDED_BEAT    # 1 = worker arranca con --beat
+    value: "1"
+  - key: REPORTE_DIARIO_HORA     # HH:MM hora de México (crontab)
+    value: "08:00"

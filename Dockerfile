@@ -31,9 +31,8 @@ RUN python manage.py collectstatic --no-input \
 # Exponer el puerto
 EXPOSE $PORT
 
-# Comando por defecto: iniciar Gunicorn
-CMD gunicorn core.wsgi \
-    --bind 0.0.0.0:$PORT \
-    --workers 2 \
-    --timeout 120 \
-    --log-file -
+# Entrypoint: arranca worker/Beat (si están activados) y luego Gunicorn
+# sed quita los saltos de línea de Windows (CRLF) que rompen el script
+RUN sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh
+
+CMD ["sh", "docker-entrypoint.sh"]
